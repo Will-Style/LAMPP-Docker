@@ -22,7 +22,7 @@ https://[example]-db.local.localhost
 
 
 ###### 注意点
-- PHPのVersionは7.4でMySQLは5.7にしてますが各Dockerfile内で変更できるようにしています。
+- PHPのVersionは8でMySQLは5.7にしてますが各Dockerfile内で変更できるようにしています。
 - laravel-dockerとなっていますがDocumentRootを変更すればWordPressも動くと思います。
 - ./docker/mysql/init/内にsqlファイルを入れて初回起動するとsqlを実行してくれます。
 - ./docker/mysql/db/内でデータを永続化しているのでやり直したいときはフォルダ内を削除してから再度起動してください。
