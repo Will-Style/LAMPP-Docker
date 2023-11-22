@@ -6,7 +6,7 @@ services:
       # プロジェクトディレクトリ自体を共有してapacheの方でDocumentRootを変える
       - ${ROOT}:/var/www/html
     environment:
-      VIRTUAL_HOST: ${HOST_NAME}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
       CERT_NAME: ${CERT_NAME}  # これで_wildcard.local.localhost.crt と _wildcard.local.localhost.key が読み込まれる
       HTTPS_METHOD: "noredirect" # httpアクセスもしたい場合はこれでリダイレクトを無効にする
     networks:

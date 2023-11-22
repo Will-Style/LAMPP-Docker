@@ -1,5 +1,5 @@
 #使うDockerイメージはdocker-compose.ymlで指定
-FROM mysql:5.7
+FROM mysql:8-debian
 
 # MySQLが載ってるOSのタイムゾーンを日本時間にする
 # 参考URL<https://qiita.com/rowpure/items/dbedbe2b98e91a34d0d5>
