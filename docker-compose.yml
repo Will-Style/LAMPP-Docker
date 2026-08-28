@@ -1,10 +1,15 @@
-version: '3.5'
 services:
   web:
-    build: ./docker/web/
+    build:
+      context: ./docker/web/
+      args:
+        # PHP(Apache同梱)のバージョンは .env の PHP_VERSION で切り替える
+        PHP_VERSION: ${PHP_VERSION:-8.5}
     volumes:
       # プロジェクトディレクトリ自体を共有してapacheの方でDocumentRootを変える
       - ${ROOT}:/var/www/html
+      # Apacheのログをホスト側から見られるようにする
+      - ${APACHE_LOG_DIR:-./log/web}:/var/log/apache2
     environment:
       VIRTUAL_HOST: ${VIRTUAL_HOST}
       CERT_NAME: ${CERT_NAME}  # これで_wildcard.local.localhost.crt と _wildcard.local.localhost.key が読み込まれる
@@ -14,8 +19,11 @@ services:
       - local-network
     restart: always
   mysql:
-    platform: linux/x86_64
-    build: ./docker/mysql/
+    build:
+      context: ./docker/mysql/
+      args:
+        # MySQLのバージョンは .env の MYSQL_VERSION で切り替える
+        MYSQL_VERSION: ${MYSQL_VERSION:-9.7}
     volumes:
       # MySQLのデータディレクトリは永続化する
       - ./docker/mysql/db:/var/lib/mysql
@@ -23,9 +31,14 @@ services:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # 初回起動時にDBと一般ユーザーを自動で作る
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
      # MysqlWorkbench等のクライアントツールからつなげたい時だけ以下を有効にすれば良い
+     # ホスト側ポートは .env の MYSQL_PORT で案件ごとに重複しない番号にする
 #    ports:
-#      - 3316:3306
+#      - "${MYSQL_PORT:-3316}:3306"
     # 明示的に stop がされない限り、終了ステータスに関係なく常に再起動が行われる
     restart: always
     networks:
@@ -38,8 +51,9 @@ services:
       VIRTUAL_HOST: ${MYADMIN_HOST_NAME}
       CERT_NAME: ${CERT_NAME} # _wildcard.local.localhost.crt と _wildcard.local.localhost.key が読み込まれる
       PMA_HOST: ${MYSQL_HOST}
-
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # 自動ログインしたくない（ログイン画面でユーザーを選びたい）場合はこの2行をコメントアウトする
+      PMA_USER: ${MYSQL_ROOT_USER}
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MEMORY_LIMIT: 128M
       UPLOAD_LIMIT: 1000M
     networks:
@@ -49,8 +63,10 @@ services:
 ## ここで使用するネットワークの宣言
 networks:
   # コンテナ内で通信する為のネットワーク
+  # 実ネットワーク名を案件ごとに分けないと、複数案件を同時起動した時に
+  # 同じ myapp-network 上で mysql という名前が重複して別案件のDBに繋がってしまう
   myapp-network:
-    name: myapp-network
+    name: ${APP_NETWORK:-myapp-network}
   # リバースプロキシからアクセスされる為のネットワーク
   local-network:
     external: true  # 外部ネットワークであることを宣言をしておけばdocker-compose downした時に消されない
