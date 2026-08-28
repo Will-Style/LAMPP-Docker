@@ -1,0 +1,8 @@
+.DS_Store
+
+# MySQLのデータ実体（案件ごとに肥大化するのでコミットしない）
+/docker/mysql/db/
+
+# Apacheのログ
+/log/web/*
+!/log/web/.gitkeep

@@ -1,24 +1,19 @@
-#使うDockerイメージはdocker-compose.ymlで指定
-FROM mysql:8.0-debian
+# 使うMySQLのバージョンは docker-compose.yml の build.args 経由で .env の MYSQL_VERSION から渡される
+# 9.x 系からは Debian ベースのイメージが廃止され Oracle Linux ベースのみになっている
+ARG MYSQL_VERSION=9.7
+FROM mysql:${MYSQL_VERSION}
 
-# MySQLが載ってるOSのタイムゾーンを日本時間にする
-# 参考URL<https://qiita.com/rowpure/items/dbedbe2b98e91a34d0d5>
-# 他にベストの方法があれば模索してもいい
-# RUN echo "deb http://archive.debian.org/debian/ stretch main" > /etc/apt/sources.list \
-#     && echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list \
-#     && apt-get update \
-#     && apt-get install -y tzdata && \
-#     cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+# MySQLが載ってるOSの日本語ロケールを有効にする
+# Oracle Linux ベースなので apt-get ではなく microdnf を使う
+RUN microdnf install -y glibc-langpack-ja \
+ && microdnf clean all
 
-RUN apt-get update
-RUN apt-get -y install locales-all
+ENV LANG=ja_JP.UTF-8
+ENV LANGUAGE=ja_JP:ja
+ENV LC_ALL=ja_JP.UTF-8
 
-ENV LANG ja_JP.UTF-8
-ENV LANGUAGE ja_JP:ja
-ENV LC_ALL ja_JP.UTF-8
-
-#MySQL設定ファイルをイメージ内にコピー
-ADD ./my.cnf /etc/mysql/conf.d/my.cnf
+# MySQL設定ファイルをイメージ内にコピー（/etc/my.cnf から !includedir されている）
+COPY ./my.cnf /etc/mysql/conf.d/my.cnf
 
 #docker runに実行される
 CMD ["mysqld"]

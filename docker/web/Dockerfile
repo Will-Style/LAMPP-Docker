@@ -1,5 +1,7 @@
 # 案件やリモート環境に応じてPHPバージョンは変える
-FROM php:8-apache
+# バージョンは docker-compose.yml の build.args 経由で .env の PHP_VERSION から渡される
+ARG PHP_VERSION=8.5
+FROM php:${PHP_VERSION}-apache
 
 # ここで必要なものをインストール
 RUN apt-get update \
@@ -25,13 +27,15 @@ RUN apt-get update \
  && a2enmod rewrite headers
 
 
-RUN docker-php-ext-install -j$(nproc) intl mysqli pdo_mysql opcache && docker-php-ext-enable mysqli \
+# 現在のphp公式イメージはOPcacheが静的に組み込まれている（php -m に Zend OPcache が出る）ので
+# docker-php-ext-install の対象に opcache を入れるとビルドに失敗する
+RUN docker-php-ext-install -j$(nproc) intl mysqli pdo_mysql && docker-php-ext-enable mysqli \
 && docker-php-ext-configure gd --with-freetype --with-jpeg \
 && docker-php-ext-install -j$(nproc) gd
 
 
    
-COPY --from=composer /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # 予め docker cp コマンドで /usr/local/etc/php/php.ini-development ファイルをphp.iniとして持ってくる
 # php.ini-production ではなく php.ini-development の方を持ってきた理由は、
